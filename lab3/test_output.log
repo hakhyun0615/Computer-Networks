@@ -1,0 +1,331 @@
+============================================================
+Lab 3: Packet Crafting - Complete Test Suite
+============================================================
+=== Network Configuration ===
+Please configure these values for your system:
+
+Interface: ens160
+My IP: 172.16.191.128
+My MAC: 00:0c:29:6f:00:f1
+Gateway MAC: 00:50:56:fb:73:ea
+
+
+⚠ IMPORTANT NOTES:
+1. Make sure to run Wireshark before starting tests
+2. Tests 1 and 2 will send packets but not wait for replies
+3. Test 3 will send and receive ICMP replies
+4. Test 4 will perform DNS lookup
+5. Test 5 requires sudo for firewall rules
+
+Starting tests in 2 seconds...
+
+============================================================
+TEST 1: ICMP Ping with send() (Layer 3)
+============================================================
+
+Packet to send:
+### Ether ###
+  dst_mac: 00:50:56:fb:73:ea
+  src_mac: 00:0c:29:6f:00:f1
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 60
+    ident: 0
+    flags_frag: 0
+    ttl: 64
+    proto: 1
+    checksum: 65312
+    src_ip: 172.16.191.128
+    dst_ip: 8.8.8.8
+    ### ICMP ###
+      type: 8
+      code: 0
+      checksum: f7fd
+      id: 1
+      seq: 1
+      data: 0000000000000000000000000000000000000000000000000000000000000000
+
+Sending via send() at Layer 3...
+[+] Sent packet to 8.8.8.8 (Layer 3)
+✓ Packet sent! Check Wireshark for transmission and reply.
+
+============================================================
+TEST 2: ICMP Ping with sendp() (Layer 2)
+============================================================
+
+Packet to send:
+### Ether ###
+  dst_mac: 00:50:56:fb:73:ea
+  src_mac: 00:0c:29:6f:00:f1
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 60
+    ident: 0
+    flags_frag: 0
+    ttl: 64
+    proto: 1
+    checksum: 65312
+    src_ip: 172.16.191.128
+    dst_ip: 8.8.8.8
+    ### ICMP ###
+      type: 8
+      code: 0
+      checksum: f7fc
+      id: 2
+      seq: 1
+      data: 0000000000000000000000000000000000000000000000000000000000000000
+
+Sending via sendp() on ens160 at Layer 2...
+[+] Sent packet on ens160 (Layer 2)
+✓ Packet sent! Check Wireshark for transmission and reply.
+
+============================================================
+TEST 3: ICMP Ping with sr() (Send and Receive)
+============================================================
+
+Packet to send:
+### Ether ###
+  dst_mac: 00:50:56:fb:73:ea
+  src_mac: 00:0c:29:6f:00:f1
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 60
+    ident: 0
+    flags_frag: 0
+    ttl: 64
+    proto: 1
+    checksum: 65312
+    src_ip: 172.16.191.128
+    dst_ip: 8.8.8.8
+    ### ICMP ###
+      type: 8
+      code: 0
+      checksum: f7fb
+      id: 3
+      seq: 1
+      data: 0000000000000000000000000000000000000000000000000000000000000000
+
+Sending via sr() and waiting for reply...
+SR is sending
+[+] Sent packet to 8.8.8.8 (Layer 3)
+[+] Sent packet to 8.8.8.8, waiting for reply on ens160...
+
+✓ Received reply:
+### Ether ###
+  dst_mac: 00:0c:29:6f:00:f1
+  src_mac: 00:50:56:fb:73:ea
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 60
+    ident: 0
+    flags_frag: 0
+    ttl: 128
+    proto: 1
+    checksum: 48928
+    src_ip: 8.8.8.8
+    dst_ip: 172.16.191.128
+    ### ICMP ###
+      type: 0
+      code: 0
+      checksum: fffb
+      id: 3
+      seq: 1
+      data: 0000000000000000000000000000000000000000000000000000000000000000
+
+✓ SUCCESS: Received valid ICMP Echo Reply (type=0)
+
+============================================================
+TEST 4: DNS Query for vibrantcloud.org
+============================================================
+
+Querying DNS for vibrantcloud.org at 8.8.8.8...
+
+Packet to send:
+### Ether ###
+  dst_mac: 00:50:56:fb:73:ea
+  src_mac: 00:0c:29:6f:00:f1
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 62
+    ident: 0
+    flags_frag: 0
+    ttl: 64
+    proto: 17
+    checksum: 65294
+    src_ip: 172.16.191.128
+    dst_ip: 8.8.8.8
+    ### UDP ###
+      sport: 12345
+      dport: 53
+      length: 42
+      checksum: 6752
+      ### DNS ###
+        id: 0000
+        qname: vibrantcloud.org
+SR is sending
+[+] Sent packet to 8.8.8.8 (Layer 3)
+[+] Sent packet to 8.8.8.8, waiting for reply on ens160...
+
+✓ Received DNS reply:
+### Ether ###
+  dst_mac: 00:0c:29:6f:00:f1
+  src_mac: 00:50:56:fb:73:ea
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 62
+    ident: 0
+    flags_frag: 0
+    ttl: 128
+    proto: 17
+    checksum: 48910
+    src_ip: 8.8.8.8
+    dst_ip: 172.16.191.128
+    ### UDP ###
+      sport: 53
+      dport: 12345
+      length: 42
+      checksum: eb75
+      src_ip: 8.8.8.8
+      dst_ip: 172.16.191.128
+      ### DNS ###
+        id: 030c
+        qname: vibrantcloud.org
+        addr: 173.201.179.249
+
+✓ SUCCESS: vibrantcloud.org resolves to 173.201.179.249
+
+============================================================
+TEST 5: TCP 3-Way Handshake and HTTP GET
+============================================================
+
+Setting up firewall rules to prevent RST packets...
+✓ Firewall rule added
+
+[1/4] Sending SYN to 173.201.179.249:80...
+### Ether ###
+  dst_mac: 00:50:56:fb:73:ea
+  src_mac: 00:0c:29:6f:00:f1
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 40
+    ident: 0
+    flags_frag: 0
+    ttl: 64
+    proto: 6
+    checksum: 44412
+    src_ip: 172.16.191.128
+    dst_ip: 173.201.179.249
+    ### TCP ###
+      sport: 50607
+      dport: 80
+      seq: 3692667264
+      ack: 0
+      flags: 2
+      window: 8192
+      checksum: 19555
+SR is sending
+[+] Sent packet to 173.201.179.249 (Layer 3)
+[+] Sent packet to 173.201.179.249, waiting for reply on ens160...
+
+✓ Received SYN-ACK:
+### Ether ###
+  dst_mac: 00:0c:29:6f:00:f1
+  src_mac: 00:50:56:fb:73:ea
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 44
+    ident: 0
+    flags_frag: 0
+    ttl: 128
+    proto: 6
+    checksum: 28024
+    src_ip: 173.201.179.249
+    dst_ip: 172.16.191.128
+    ### TCP ###
+      sport: 80
+      dport: 50607
+      seq: 3153553773
+      ack: 3692667265
+      flags: 18
+      window: 64240
+      checksum: 26321
+      src_ip: 173.201.179.249
+      dst_ip: 172.16.191.128
+
+[2/4] Sending ACK...
+[+] Sent packet to 173.201.179.249 (Layer 3)
+✓ ACK sent, connection established!
+
+[3/4] Sending HTTP GET request...
+SR is sending
+[+] Sent packet to 173.201.179.249 (Layer 3)
+[+] Sent packet to 173.201.179.249, waiting for reply on ens160...
+
+✓ Received HTTP response:
+### Ether ###
+  dst_mac: 00:0c:29:6f:00:f1
+  src_mac: 00:50:56:fb:73:ea
+  type: 0800
+  ### IP ###
+    version: 4
+    ihl: 5
+    tos: 0
+    total_len: 44
+    ident: 0
+    flags_frag: 0
+    ttl: 128
+    proto: 6
+    checksum: 28024
+    src_ip: 173.201.179.249
+    dst_ip: 172.16.191.128
+    ### TCP ###
+      sport: 80
+      dport: 50607
+      seq: 3153553773
+      ack: 3692667265
+      flags: 18
+      window: 64240
+      checksum: 26321
+      src_ip: 173.201.179.249
+      dst_ip: 172.16.191.128
+
+[4/4] Extracting HTML content...
+⚠ No data in TCP response
+
+Cleaning up firewall rules...
+✓ Firewall rule removed
+
+============================================================
+ALL TESTS COMPLETED!
+============================================================
+
+Please capture screenshots from Wireshark showing:
+1. ICMP ping sent via send() with reply
+2. ICMP ping sent via sendp() with reply
+3. ICMP ping sent via sr() with reply displayed
+4. DNS query and response with IP address
+5. TCP 3-way handshake and HTTP GET/response
