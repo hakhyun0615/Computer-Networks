@@ -16,7 +16,8 @@ def main():
 
     pkt = eth / ip / udp / dns
 
-    response = sr(pkt)
+    # Bind to the specific interface and wait up to 5s
+    response = sr(pkt, interface=iface, timeout=5.0)
     response.show()
 
 

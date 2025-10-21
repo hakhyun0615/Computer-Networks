@@ -25,7 +25,7 @@ def main():
     send(pkt)
 
     print("Waiting for ICMP Echo Reply...")
-    reply_pkt = sr(pkt)
+    reply_pkt = sr(pkt, interface=iface, timeout=5.0)
     reply_pkt.show()
 
 

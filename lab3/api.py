@@ -21,6 +21,14 @@ def _dst_of(pkt) -> str:
     return "?"
 
 
+def _src_of(pkt) -> str:
+    if isinstance(pkt, Ether) and getattr(pkt, "payload", None) and isinstance(pkt.payload, IP):
+        return pkt.payload.src_ip
+    if isinstance(pkt, IP):
+        return pkt.src_ip
+    return "?"
+
+
 def send(pkt):
     ip = _ensure_ip(pkt)
     if not isinstance(ip, IP):
@@ -55,19 +63,34 @@ def sr(pkt, interface: Optional[str] = None, timeout: float = 2.0):
     print("SR is sending")
     # Transmit at L3
     send(pkt)
-    # Receive at L2 on any interface
+    # Receive at L2 on any interface or a specific one
     af_packet = getattr(socket, "AF_PACKET", None)
     if af_packet is None:
         raise NotImplementedError("sr() sniff requires Linux (AF_PACKET)")
     recv_sock = socket.socket(af_packet, socket.SOCK_RAW, socket.htons(0x0003))
+    if interface:
+        # Enforce binding to the given interface. If it fails, raise.
+        recv_sock.bind((interface, 0))
     recv_sock.settimeout(timeout)
     try:
-        print(f"[+] Sent packet to {_dst_of(pkt)}, waiting for reply...")
-        frame = recv_sock.recv(65535)
-        if not frame:
-            raise TimeoutError("No reply")
-        print(f"[+] Received reply from {interface or 'any'}")
-        return Ether(raw=frame)
+        dst_ip = _dst_of(pkt)
+        src_ip = _src_of(pkt)
+        print(f"[+] Sent packet to {dst_ip}, waiting for reply on {interface or 'any'}...")
+        while True:
+            frame = recv_sock.recv(65535)
+            if not frame:
+                continue
+            try:
+                ether = Ether(raw=frame)
+                ip = ether.get_layer("IP")
+                if not ip:
+                    continue
+                # Only accept ICMP replies destined to our source IP
+                if getattr(ip, "proto", None) == 1 and getattr(ip, "dst_ip", "") == src_ip:
+                    return ether
+            except Exception:
+                # Ignore frames we fail to parse as our stack
+                continue
     finally:
         recv_sock.close()
 
@@ -115,4 +138,4 @@ def receive_packet():
     return sr(Ether(raw=b''), timeout=1)
 
 def sniff_packets(interface):
-    return sniff(interface=interface)    return sniff(interface=interface)
+    return sniff(interface=interface)
