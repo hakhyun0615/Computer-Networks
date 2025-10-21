@@ -93,6 +93,15 @@ class IP(BaseLayer):
                 self.proto = PROTO_UDP
             else:
                 self.proto = 0
+        # Make sure L4 has IPs for checksum (works even if stacking started at Ether)
+        if self.payload is not None:
+            lname = self.payload.__class__.__name__
+            if lname in ("TCP", "UDP"):
+                try:
+                    setattr(self.payload, "src_ip", self.src_ip)
+                    setattr(self.payload, "dst_ip", self.dst_ip)
+                except Exception:
+                    pass
         payload_bytes = self.payload.build() if self.payload else b""
         v_ihl = (self.version << 4) | self.ihl
         total_len = 20 + len(payload_bytes)

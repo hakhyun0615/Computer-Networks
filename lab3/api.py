@@ -59,7 +59,7 @@ def sendp(pkt, interface: str):
         sock.close()
 
 
-def sr(pkt, interface: Optional[str] = None, timeout: float = 2.0):
+def sr(pkt, interface: Optional[str] = None, timeout: float = 8.0):
     print("SR is sending")
     # Transmit at L3
     send(pkt)
