@@ -3,10 +3,11 @@ from layers import DNS, IP, UDP, Ether
 
 
 def main():
-    # macOS values provided by you
-    my_ip = "10.3.5.4"
-    my_mac = "42:16:ac:8b:16:68"
-    dst_mac = "dc:2c:6e:20:75:b0"  # gateway MAC
+    # VM values
+    iface = "ens160"
+    my_ip = "172.16.191.128"
+    my_mac = "00:0c:29:6f:00:f1"
+    dst_mac = "00:50:56:fb:73:ea"  # gateway MAC (172.16.191.2)
 
     eth = Ether(src_mac=my_mac, dst_mac=dst_mac)
     ip = IP(src_ip=my_ip, dst_ip="8.8.8.8")
