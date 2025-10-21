@@ -4,8 +4,8 @@ Helper script to get network configuration for your system.
 Run this first to get the values needed for testing.
 """
 
-import subprocess
 import re
+import subprocess
 
 
 def run_command(cmd):
