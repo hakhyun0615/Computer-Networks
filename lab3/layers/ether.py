@@ -51,6 +51,4 @@ class Ether(BaseLayer):
         print(f"{pad}  src_mac: {self.src_mac}")
         print(f"{pad}  type: {self.type:04x}")
         if self.payload:
-            self.payload.show(indent + 1)        print(f"{pad}  type: {self.type:04x}")
-        if self.payload:
-            self.payload.show(indent + 1)
+            self.payload.show(indent + 1)        

@@ -86,6 +86,4 @@ class UDP(BaseLayer):
         if getattr(self, "dst_ip", None):
             print(f"{pad}  dst_ip: {self.dst_ip}")
         if self.payload:
-            self.payload.show(indent + 1)            print(f"{pad}  dst_ip: {self.dst_ip}")
-        if self.payload:
             self.payload.show(indent + 1)

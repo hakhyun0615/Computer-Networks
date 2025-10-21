@@ -156,6 +156,4 @@ class IP(BaseLayer):
         print(f"{pad}  src_ip: {self.src_ip}")
         print(f"{pad}  dst_ip: {self.dst_ip}")
         if self.payload:
-            self.payload.show(indent + 1)        print(f"{pad}  dst_ip: {self.dst_ip}")
-        if self.payload:
             self.payload.show(indent + 1)

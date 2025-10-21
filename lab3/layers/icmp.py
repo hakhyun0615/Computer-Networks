@@ -43,6 +43,4 @@ class ICMP(BaseLayer):
         if self.data:
             print(f"{pad}  data: {self.data.hex()}")
         if self.payload:
-            self.payload.show(indent + 1)            print(f"{pad}  data: {self.data.hex()}")
-        if self.payload:
-            self.payload.show(indent + 1)
+            self.payload.show(indent + 1) 

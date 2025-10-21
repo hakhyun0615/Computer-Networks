@@ -105,6 +105,4 @@ class TCP(BaseLayer):
         if getattr(self, "dst_ip", None):
             print(f"{pad}  dst_ip: {self.dst_ip}")
         if self.data:
-            print(f"{pad}  data: {self.data.hex() if isinstance(self.data, bytes) else self.data}")            print(f"{pad}  dst_ip: {self.dst_ip}")
-        if self.data:
             print(f"{pad}  data: {self.data.hex() if isinstance(self.data, bytes) else self.data}")
