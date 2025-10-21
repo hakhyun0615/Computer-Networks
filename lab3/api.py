@@ -63,21 +63,53 @@ def sr(pkt, interface: Optional[str] = None, timeout: float = 2.0):
     print("SR is sending")
     # Transmit at L3
     send(pkt)
-    # Receive at L2 on any interface or a specific one
+
+    # Determine expected protocol and ports from the outgoing packet
+    def _extract_expectations(p):
+        # Unwrap to IP layer
+        ip_layer = p.payload if isinstance(p, Ether) else p
+        l4 = getattr(ip_layer, "payload", None)
+        proto = getattr(ip_layer, "proto", 0)
+        src_ip = getattr(ip_layer, "src_ip", None)
+        exp = {"proto": proto, "src_ip": src_ip}
+        if l4 and l4.__class__.__name__ == "UDP":
+            exp.update({
+                "udp_sport": getattr(l4, "sport", None),
+                "udp_dport": getattr(l4, "dport", None),
+            })
+            # If proto not set on IP, infer UDP=17
+            if not proto:
+                exp["proto"] = 17
+        elif l4 and l4.__class__.__name__ == "TCP":
+            exp.update({
+                "tcp_sport": getattr(l4, "sport", None),
+                "tcp_dport": getattr(l4, "dport", None),
+            })
+            if not proto:
+                exp["proto"] = 6
+        elif l4 and l4.__class__.__name__ == "ICMP":
+            if not proto:
+                exp["proto"] = 1
+        return exp
+
+    exp = _extract_expectations(pkt)
+
+    # Receive at L2 on specified interface
     af_packet = getattr(socket, "AF_PACKET", None)
     if af_packet is None:
         raise NotImplementedError("sr() sniff requires Linux (AF_PACKET)")
     recv_sock = socket.socket(af_packet, socket.SOCK_RAW, socket.htons(0x0003))
     if interface:
-        # Enforce binding to the given interface. If it fails, raise.
         recv_sock.bind((interface, 0))
     recv_sock.settimeout(timeout)
+
     try:
-        dst_ip = _dst_of(pkt)
-        src_ip = _src_of(pkt)
-        print(f"[+] Sent packet to {dst_ip}, waiting for reply on {interface or 'any'}...")
+        print(f"[+] Sent packet to {_dst_of(pkt)}, waiting for reply on {interface or 'any'}...")
         while True:
-            frame = recv_sock.recv(65535)
+            try:
+                frame = recv_sock.recv(65535)
+            except socket.timeout:
+                raise TimeoutError("No reply before timeout")
             if not frame:
                 continue
             try:
@@ -85,11 +117,35 @@ def sr(pkt, interface: Optional[str] = None, timeout: float = 2.0):
                 ip = ether.get_layer("IP")
                 if not ip:
                     continue
-                # Only accept ICMP replies destined to our source IP
-                if getattr(ip, "proto", None) == 1 and getattr(ip, "dst_ip", "") == src_ip:
-                    return ether
+                if exp.get("src_ip") and getattr(ip, "dst_ip", None) != exp["src_ip"]:
+                    continue
+                # Protocol filter
+                proto = getattr(ip, "proto", None)
+                if exp.get("proto") and proto != exp["proto"]:
+                    continue
+                # UDP-specific port flip check (dns)
+                if proto == 17:
+                    udp = ether.get_layer("UDP")
+                    if not udp:
+                        continue
+                    udp_sport = getattr(udp, "sport", None)
+                    udp_dport = getattr(udp, "dport", None)
+                    if (exp.get("udp_dport") is not None and udp_sport != exp["udp_dport"]) or \
+                       (exp.get("udp_sport") is not None and udp_dport != exp["udp_sport"]):
+                        continue
+                # TCP-specific check (3whs)
+                if proto == 6:
+                    tcp = ether.get_layer("TCP")
+                    if not tcp:
+                        continue
+                    tcp_sport = getattr(tcp, "sport", None)
+                    tcp_dport = getattr(tcp, "dport", None)
+                    if (exp.get("tcp_dport") is not None and tcp_sport != exp["tcp_dport"]) or \
+                       (exp.get("tcp_sport") is not None and tcp_dport != exp["tcp_sport"]):
+                        continue
+                # ICMP: already filtered by proto+dst
+                return ether
             except Exception:
-                # Ignore frames we fail to parse as our stack
                 continue
     finally:
         recv_sock.close()
