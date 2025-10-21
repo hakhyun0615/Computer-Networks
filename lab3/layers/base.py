@@ -18,14 +18,20 @@ class BaseLayer:
         raise NotImplementedError
 
     def __truediv__(self: T, other: "BaseLayer") -> T:
-        """Overload the division operator to stack layers, Scapy-style.
-        Returns the lower layer with its payload set to the upper layer.
+        """Stack layers like Scapy: append `other` to the tail payload of `self`.
+        Prevent cycles, and do it iteratively to avoid recursion issues.
         """
-        if self.payload is None:
-            self.payload = other
-        else:
-            # Delegate to the next layer to preserve chain order
-            self.payload = self.payload / other
+        if other is self:
+            raise ValueError("Cannot set a layer as its own payload")
+        # Find tail
+        node: BaseLayer = self
+        visited = {id(node)}
+        while node.payload is not None:
+            if id(node.payload) in visited:
+                raise ValueError("Cycle detected in layer chain")
+            visited.add(id(node.payload))
+            node = node.payload
+        node.payload = other
         return self
 
     def get_layer(self, name: str) -> Optional["BaseLayer"]:
@@ -34,4 +40,4 @@ class BaseLayer:
             return self
         if self.payload:
             return self.payload.get_layer(name)
-        return None    
+        return None
