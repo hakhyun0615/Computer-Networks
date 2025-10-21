@@ -78,5 +78,4 @@ class DNS(BaseLayer):
             print(f"{pad}  id: {self.id:04x}")
         print(f"{pad}  qname: {getattr(self, 'qname', '')}")
         if getattr(self, "addr", None):
-            print(f"{pad}  addr: {self.addr}")       
             print(f"{pad}  addr: {self.addr}")

@@ -81,9 +81,9 @@ class IP(BaseLayer):
         else:
             self.payload = None
 
-    def build(self) -> bytes:
-        # Infer proto if needed
-        if self.payload is not None and getattr(self, "proto", 0) == 0:
+    def _infer_proto(self):
+        """Infer protocol number from payload if not set"""
+        if self.payload is not None and (self.proto is None or self.proto == 0):
             lname = self.payload.__class__.__name__
             if lname == "ICMP":
                 self.proto = PROTO_ICMP
@@ -93,6 +93,12 @@ class IP(BaseLayer):
                 self.proto = PROTO_UDP
             else:
                 self.proto = 0
+        elif self.proto is None:
+            self.proto = 0
+
+    def build(self) -> bytes:
+        # Infer proto if needed
+        self._infer_proto()
         # Make sure L4 has IPs for checksum (works even if stacking started at Ether)
         if self.payload is not None:
             lname = self.payload.__class__.__name__
@@ -135,6 +141,9 @@ class IP(BaseLayer):
         return header + payload_bytes
 
     def show(self, indent: int = 0) -> None:
+        # Infer proto before showing
+        self._infer_proto()
+        
         pad = "  " * indent
         print(f"{pad}### IP ###")
         print(f"{pad}  version: {self.version}")

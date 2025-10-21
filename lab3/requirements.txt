@@ -1,4 +1,2 @@
 # requirements.txt
-scapy
-socket
-pytest
+netifaces>=0.11.0

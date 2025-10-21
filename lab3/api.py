@@ -61,6 +61,13 @@ def sendp(pkt, interface: str):
 
 def sr(pkt, interface: Optional[str] = None, timeout: float = 8.0):
     print("SR is sending")
+    
+    # Ensure proto is set before expectations check
+    if isinstance(pkt, Ether) and pkt.payload and isinstance(pkt.payload, IP):
+        pkt.payload._infer_proto()
+    elif isinstance(pkt, IP):
+        pkt._infer_proto()
+    
     # Transmit at L3
     send(pkt)
 
